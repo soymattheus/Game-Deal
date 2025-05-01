@@ -1,0 +1,250 @@
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import DataTable from '../../components/DataTable';
+import Deal from '../../types/Deal';
+import Modal from '../../components/GameModal';
+
+import { LayoutGrid, Menu, SquareMenu, Table } from 'lucide-react'
+import FilterSidebar from '../../components/FilterSidebar';
+import GridView from './gridView';
+import Store from '../../types/Store';
+import { Button } from '../../components/Button';
+
+export default function GameDealsDashboard() {
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [stores, setStores] = useState<Store[]>([])
+  const [dealsWithStoreName, setDealsWithStoreName] = useState<Deal[]>([])
+  const [search, setSearch] = useState('');
+  const [storeID, setStoreID] = useState('');
+  const [priceRange, setPriceRange] = useState([0, 60]);
+  const [sortBy, setSortBy] = useState('Price');
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  const [openMobileMenu, setOpenMobileMenu] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [isPagingUpdate, setIsPagingUpdate] = useState(false);
+
+  const pageSize = 6;
+
+  useEffect(() => {
+    const fetchStores = async () => {
+      try {
+        const res = await axios.get('https://www.cheapshark.com/api/1.0/stores')
+        setStores(res.data)
+      } catch (error) {
+        console.error('Erro ao buscar lojas:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchStores()
+  }, [])
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      setLoading(true);
+      !isPagingUpdate && setCurrentPage(0);
+
+      const params: any = {
+        pageSize,
+        pageNumber: currentPage,
+      };
+
+      if (search) params.title = search;
+      if (storeID) params.storeID = storeID;
+      if (priceRange[0] > 0) params.lowerPrice = priceRange[0];
+      if (priceRange[1] > 0) params.upperPrice = priceRange[1];
+      if (sortBy) params.sortBy = sortBy.replace(/ /g, '').toLowerCase();
+
+      try {
+        const res = await axios.get('https://www.cheapshark.com/api/1.0/deals', { params });
+        setDeals(res.data);
+        
+      } catch (error) {
+        console.error('Erro ao buscar deals:', error);
+      } finally {
+        setIsPagingUpdate(false);
+        setLoading(false);
+      }
+    };
+
+    fetchDeals();
+  }, [search, storeID, priceRange, sortBy, currentPage]);
+
+  useEffect(() => {
+    const storeMap = new Map<string, string>()
+    stores.forEach(store => {
+      storeMap.set(store.storeID, store.storeName)
+    })
+    
+    const dealsWithStoreName = deals.map(deal => ({
+      ...deal,
+      storeName: storeMap.get(deal.storeID) || 'Unknown Store'
+    }))
+    
+    console.log(dealsWithStoreName)
+    setDealsWithStoreName(dealsWithStoreName)
+  },[deals, stores])
+  
+
+  const Columns = ['Game', 'New Price', 'Previous price', 'Saving', 'Store', 'Rating'];
+  
+  const handleSelectDeal = (deal: Deal) => {
+    setSelectedDeal(deal);
+    console.log(deal)
+    setShowModal(true);
+  };
+
+  return (
+    <div className="flex flex-col w-full min-h-screen mx-auto">
+        <div className="flex items-center justify-between p-4 bg-blue-300 shadow">
+            <h1 className="text-2xl font-semibold">Game Deals</h1>
+            <p className="hidden md:flex text-blue-600">Thousands of deals</p>
+            <Menu onClick={() => setOpenMobileMenu(true)} className='md:hidden' size={32} color="blue" />
+        </div>
+
+        <div className='flex flex-row w-full'>
+            {/* Sidebar */}
+            <FilterSidebar 
+              search={search} 
+              setSearch={setSearch} 
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              storeID={storeID}
+              setStoreID={setStoreID}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              stores={stores}  
+              openMobileMenu={openMobileMenu}
+              setOpenMobileMenu={setOpenMobileMenu}
+            />
+
+            {/* Main content */}
+            <div className="flex flex-col w-full md:w-4/5 md:px-4">
+              {/* Header body */}
+              <div className='flex flex-col md:flex-row w-full items-center justify-center md:justify-between text-center font-semibold text-blue-600 pt-4 px-4'>
+                <p>
+                  Welcome! We're glad to have you here. Explore and enjoy the best deals just for you!
+                </p>
+
+                <div className="w-full flex justify-end">
+                  <div className="flex flex-row items-center space-x-2">
+                    <p className="text-gray-500 text-sm">View as:</p>
+
+                    {/* List View */}
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`flex items-center transition-opacity ${
+                        viewMode === 'list' ? 'opacity-100' : 'opacity-40'
+                      }`}
+                      title="List"
+                    >
+                      <Table size={20} color="blue" />
+                    </button>
+
+                    {/* Grid View */}
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`flex items-center transition-opacity ${
+                        viewMode === 'grid' ? 'opacity-100' : 'opacity-40'
+                      }`}
+                      title="Grid"
+                    >
+                      <LayoutGrid size={20} color="blue" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              { 
+                viewMode === 'grid' ? (
+                  <GridView 
+                    Columns={Columns} 
+                    deals={dealsWithStoreName} 
+                    loading={loading} 
+                    currentPage={currentPage} 
+                    setCurrentPage={setCurrentPage}
+                    handleSelectDeal={handleSelectDeal}
+                    setIsPagingUpdate={setIsPagingUpdate}
+                  />
+                ) : (
+                  <DataTable 
+                    Columns={Columns} 
+                    deals={dealsWithStoreName} 
+                    loading={loading} 
+                    currentPage={currentPage} 
+                    setCurrentPage={setCurrentPage}
+                    setIsPagingUpdate={setIsPagingUpdate}
+                  >
+                    {
+                      dealsWithStoreName.map((deal) => (
+                        <tr
+                          key={deal.dealID}
+                          onClick={() => handleSelectDeal(deal)}
+                          className="hover:bg-blue-100 cursor-pointer"
+                        >
+                          <td className="p-2 border flex items-center gap-2 w-auto whitespace-nowrap overflow-x-hidden">
+                            <img
+                              src={deal.thumb}
+                              alt={deal.title}
+                              className="w-14 h-14 rounded"
+                            />
+                            {deal.title}
+                          </td>
+                          <td className="p-2 border text-green-600">${deal.salePrice}</td>
+                          <td className="p-2 border line-through text-gray-500">
+                            ${deal.normalPrice}
+                          </td>
+                          <td className="p-2 border text-red-600">
+                            {parseInt(deal.savings)}%
+                          </td>
+                          <td className="p-2 border">{deal.storeName}</td>
+                          <td className="p-2 border text-blue-600">{deal.dealRating}</td>
+                        </tr>
+                      ))
+                    }
+                  </DataTable>
+                )
+              }
+            </div>
+        </div>
+      
+        {/* Modal details */}
+        <Modal
+            isOpen={showModal}
+            onClose={() => setShowModal(false)}
+        >
+            <div className="flex flex-col text-center items-center justify-center">
+              <img src={selectedDeal?.thumb} alt={selectedDeal?.title} className="mx-auto mb-4 w-80 rounded" />
+                
+              <p className="text-2xl text-blue-500 font-medium mt-2">{selectedDeal?.title}</p>
+              <p>
+                <span className="line-through text-gray-500">From ${selectedDeal?.normalPrice}</span> {' '}
+                <span className="text-green-600">to ${selectedDeal?.salePrice}</span>
+                {' ('}<span className="text-red-600">
+                  {parseInt(selectedDeal?.savings || '0')}% saving
+                </span>{')'}
+              </p>
+              <p className="text-gray-500">Store: {selectedDeal?.storeName}</p>
+
+              <Button
+              className='justify-center'
+                onClick={() => {
+                    window.open(`https://www.cheapshark.com/redirect?dealID=${selectedDeal?.dealID}`, '_blank', 'noopener,noreferrer');
+                }}
+              >
+                Buy now
+              </Button>
+            </div>
+        </Modal>
+
+        <footer className="bg-blue-300 py-4 text-start px-4 text-sm text-gray-600">
+          &copy; {new Date().getFullYear()} Matheus Tavares. All rights reserved.
+        </footer>
+    </div>
+  );
+}
