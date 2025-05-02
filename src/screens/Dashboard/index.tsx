@@ -77,7 +77,7 @@ export default function GameDealsDashboard() {
     };
 
     fetchDeals();
-  }, [search, storeID, priceRange, sortBy, currentPage, isPagingUpdate]);
+  }, [search, storeID, priceRange, sortBy, currentPage]);
 
   useEffect(() => {
     const storeMap = new Map<string, string>()
