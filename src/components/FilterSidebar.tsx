@@ -100,7 +100,7 @@ export default function FilterSidebar(
             <div className="bg-blue-300 p-6 rounded shadow-lg w-full max-w-md">
                 <button
                     type="button"
-                    onClick={() => setOpenMobileMenu(true)}
+                    onClick={() => setOpenMobileMenu(false)}
                     className="absolute top-4 right-8 text-gray-600 hover:text-black cursor-pointer"
                 >
                     ✕
