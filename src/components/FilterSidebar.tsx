@@ -21,6 +21,7 @@ interface FilterSidebarProps {
     stores: Store[];
     openMobileMenu: boolean;
     setOpenMobileMenu: (value: boolean) => void;
+    setOpenFavoritesModal?: () => void;
 }
 
 export default function FilterSidebar(
@@ -36,6 +37,7 @@ export default function FilterSidebar(
         stores,
         openMobileMenu,
         setOpenMobileMenu = () => {},
+        setOpenFavoritesModal = () => {}
     }: FilterSidebarProps) {
 
   return (
@@ -74,11 +76,11 @@ export default function FilterSidebar(
                 ))}
             </Select>
 
-            {/* <hr/>
+            <hr/>
 
             <div className='flex w-full justify-center items-center'>
                 <button
-                    // onClick={() => setViewMode('favorites')} // ou navegue com router, dependendo da lógica
+                    onClick={() => setOpenFavoritesModal()}
                     className="flex items-center gap-2 text-gray-700 hover:text-blue-600"
                 >
                     <svg
@@ -91,14 +93,14 @@ export default function FilterSidebar(
                     </svg>
                     <span>Favoritos</span>
                 </button>
-            </div> */}
+            </div>
         </div>
 
         <div className={`${openMobileMenu ? 'fixed' : 'hidden'} md:hidden inset-0 z-50 top-14 backdrop-blur-sm bg-black/30 flex justify-center`}>
             <div className="bg-blue-300 p-6 rounded shadow-lg w-full max-w-md">
                 <button
                     type="button"
-                    onClick={() => setOpenMobileMenu(false)}
+                    onClick={() => setOpenMobileMenu(true)}
                     className="absolute top-4 right-8 text-gray-600 hover:text-black cursor-pointer"
                 >
                     ✕
@@ -136,11 +138,11 @@ export default function FilterSidebar(
                 ))}
             </Select>
 
-            {/* <hr className='my-4'/>
+            <hr className='my-4'/>
 
             <div className='flex w-full justify-center items-center'>
                 <button
-                    // onClick={() => setViewMode('favorites')} // ou navegue com router, dependendo da lógica
+                    onClick={() => setOpenFavoritesModal()}
                     className="flex items-center gap-2 text-gray-700 hover:text-blue-600"
                 >
                     <svg
@@ -153,7 +155,7 @@ export default function FilterSidebar(
                     </svg>
                     <span>Favoritos</span>
                 </button>
-            </div> */}
+            </div>
             </div>
         </div>
     </>

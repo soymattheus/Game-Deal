@@ -4,7 +4,7 @@ import DataTable from '../../components/DataTable';
 import Deal from '../../types/Deal';
 import Modal from '../../components/GameModal';
 
-import { LayoutGrid, Menu, Table } from 'lucide-react'
+import { HeartMinus, HeartPlus, LayoutGrid, Menu, Table } from 'lucide-react'
 import FilterSidebar from '../../components/FilterSidebar';
 import GridView from './gridView';
 import Store from '../../types/Store';
@@ -19,14 +19,18 @@ export default function GameDealsDashboard() {
   const [priceRange, setPriceRange] = useState([0, 60]);
   const [sortBy, setSortBy] = useState('Price');
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  const [isSelectedDealInLocalStorage, setIsSelectedDealInLocalStorage] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [openMobileMenu, setOpenMobileMenu] = useState(false);
+  const [favorites, setFavorites] = useState<Deal[]>([]);
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [isPagingUpdate, setIsPagingUpdate] = useState(false);
 
+  const Columns = ['Game', 'New Price', 'Previous price', 'Saving', 'Store', 'Rating'];
   const pageSize = 6;
 
   useEffect(() => {
@@ -90,13 +94,86 @@ export default function GameDealsDashboard() {
     setDealsWithStoreName(dealsWithStoreName)
   },[deals, stores])
   
-
-  const Columns = ['Game', 'New Price', 'Previous price', 'Saving', 'Store', 'Rating'];
-  
   const handleSelectDeal = (deal: Deal) => {
     setSelectedDeal(deal);
+    isItemInLocalStorage(deal.dealID);
     setShowModal(true);
   };
+  
+  const toggleFavorite = (item: Deal) => {
+    const key = 'favorites';
+    let favorites: Deal[] = [];
+    
+    try {
+      const stored = localStorage.getItem(key);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        
+        if (Array.isArray(parsed)) {
+          favorites = parsed;
+        }
+      }
+  
+      const exists = favorites.some(fav => fav.dealID === item.dealID);
+      const updatedFavorites = exists
+        ? favorites.filter(fav => fav.dealID !== item.dealID)
+        : [...favorites, item];
+  
+      localStorage.setItem(key, JSON.stringify(updatedFavorites));
+      isItemInLocalStorage(item.dealID, key);
+      console.log(isSelectedDealInLocalStorage)
+    } catch (error) {
+      console.error('LocalStorage access error:', error);
+    }
+  }
+
+  const isItemInLocalStorage = (id: string, key: string = 'favorites'): void => {
+    try {
+      const stored = localStorage.getItem(key);
+      if (!stored) setIsSelectedDealInLocalStorage(false);
+  
+      const parsed = JSON.parse(stored || '[]');
+      if (!Array.isArray(parsed)) setIsSelectedDealInLocalStorage(false);
+  
+      setIsSelectedDealInLocalStorage(parsed.some((item: Deal) => item.dealID === id))
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  const getFavorites = (): void => {
+    const stored = localStorage.getItem("favorites");
+
+    if (!stored) return;
+
+    try {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed)) {
+        setFavorites(parsed);
+      }
+    } catch (e) {
+      console.error("Erro ao ler favoritos:", e);
+    }
+  }
+
+  const handleOpenFavoritesModal = () => {
+    getFavorites();
+    setShowFavoritesModal(true);
+  }
+
+  const handleopenDetailsModal = (deal: Deal): void => {
+    setSelectedDeal(deal);
+    isItemInLocalStorage(deal?.dealID || '');
+    setShowModal(true);
+  }
+
+  const handleCloeDetailsModal = () => {
+    getFavorites();
+    setSelectedDeal(null);
+    setShowModal(false);
+    setIsSelectedDealInLocalStorage(false);
+  }
+  
 
   return (
     <div className="flex flex-col w-full min-h-screen mx-auto">
@@ -120,6 +197,7 @@ export default function GameDealsDashboard() {
               stores={stores}  
               openMobileMenu={openMobileMenu}
               setOpenMobileMenu={setOpenMobileMenu}
+              setOpenFavoritesModal={handleOpenFavoritesModal}
             />
 
             {/* Main content */}
@@ -211,16 +289,50 @@ export default function GameDealsDashboard() {
               }
             </div>
         </div>
+
+        {/* Modal favorites */}
+        <Modal
+            isOpen={showFavoritesModal}
+            onClose={() => setShowFavoritesModal(false)}
+            title='Your favorite deals'
+        >
+            <div className="flex flex-col text-center items-center justify-center">
+              <div className='flex flex-col w-full text-start px-8'>
+                {favorites.length === 0 ? (
+                  <p className="text-gray-500">No favorites yet.</p>
+                ) : (
+                  <ul className="list-disc list-inside text-blue-700">
+                    {favorites.map((favorite, index) => (
+                      <li key={index}> <button onClick={() => handleopenDetailsModal(favorite)}>{favorite?.title}</button></li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+        </Modal>
       
         {/* Modal details */}
         <Modal
             isOpen={showModal}
-            onClose={() => setShowModal(false)}
+            onClose={() => handleCloeDetailsModal()}
         >
             <div className="flex flex-col text-center items-center justify-center">
+              <div className='flex flex-row w-full justify-between items-center px-8'>
+                {
+                  isSelectedDealInLocalStorage ? (
+                    <button title='Remove from favorites' className='flex items-center gap-2'>
+                      <HeartMinus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                    </button>
+                  ) : (
+                    <button title='Add to favorites' className='flex items-center gap-2'>
+                      <HeartPlus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                    </button>
+                  )
+                }
+                <p className="text-2xl text-blue-500 font-medium mt-2">{selectedDeal?.title}</p>
+              </div>
               <img src={selectedDeal?.thumb} alt={selectedDeal?.title} className="mx-auto mb-4 w-80 rounded" />
                 
-              <p className="text-2xl text-blue-500 font-medium mt-2">{selectedDeal?.title}</p>
               <p>
                 <span className="line-through text-gray-500">From ${selectedDeal?.normalPrice}</span> {' '}
                 <span className="text-green-600">to ${selectedDeal?.salePrice}</span>
