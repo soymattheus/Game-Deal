@@ -303,7 +303,14 @@ export default function GameDealsDashboard() {
                 ) : (
                   <ul className="list-disc list-inside text-blue-700">
                     {favorites.map((favorite, index) => (
-                      <li key={index}> <button onClick={() => handleopenDetailsModal(favorite)}>{favorite?.title}</button></li>
+                      <li key={index}>
+                        <span 
+                          className='text-wrap break-words' 
+                          onClick={() => handleopenDetailsModal(favorite)}
+                        >
+                          {favorite?.title}
+                        </span>
+                      </li>
                     ))}
                   </ul>
                 )}
