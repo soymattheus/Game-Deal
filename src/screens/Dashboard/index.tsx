@@ -4,7 +4,7 @@ import DataTable from '../../components/DataTable';
 import Deal from '../../types/Deal';
 import Modal from '../../components/GameModal';
 
-import { LayoutGrid, Menu, SquareMenu, Table } from 'lucide-react'
+import { LayoutGrid, Menu, Table } from 'lucide-react'
 import FilterSidebar from '../../components/FilterSidebar';
 import GridView from './gridView';
 import Store from '../../types/Store';
@@ -73,7 +73,7 @@ export default function GameDealsDashboard() {
     };
 
     fetchDeals();
-  }, [search, storeID, priceRange, sortBy, currentPage]);
+  }, [search, storeID, priceRange, sortBy, currentPage, isPagingUpdate]);
 
   useEffect(() => {
     const storeMap = new Map<string, string>()
@@ -95,13 +95,12 @@ export default function GameDealsDashboard() {
   
   const handleSelectDeal = (deal: Deal) => {
     setSelectedDeal(deal);
-    console.log(deal)
     setShowModal(true);
   };
 
   return (
     <div className="flex flex-col w-full min-h-screen mx-auto">
-        <div className="flex items-center justify-between p-4 bg-blue-300 shadow">
+        <div className="flex items-center justify-between p-4 h-14 bg-blue-300 shadow">
             <h1 className="text-2xl font-semibold">Game Deals</h1>
             <p className="hidden md:flex text-blue-600">Thousands of deals</p>
             <Menu onClick={() => setOpenMobileMenu(true)} className='md:hidden' size={32} color="blue" />

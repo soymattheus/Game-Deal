@@ -73,10 +73,29 @@ export default function FilterSidebar(
                     </option>
                 ))}
             </Select>
+
+            {/* <hr/>
+
+            <div className='flex w-full justify-center items-center'>
+                <button
+                    // onClick={() => setViewMode('favorites')} // ou navegue com router, dependendo da lógica
+                    className="flex items-center gap-2 text-gray-700 hover:text-blue-600"
+                >
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-red-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    >
+                    <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z" />
+                    </svg>
+                    <span>Favoritos</span>
+                </button>
+            </div> */}
         </div>
 
-        <div className={`${openMobileMenu ? 'fixed' : 'hidden'} md:hidden inset-0 z-50 backdrop-blur-sm bg-black/30 flex items-center justify-center`}>
-            <div className="relative bg-blue-300 p-6 rounded shadow-lg w-full max-w-md">
+        <div className={`${openMobileMenu ? 'fixed' : 'hidden'} md:hidden inset-0 z-50 top-14 backdrop-blur-sm bg-black/30 flex justify-center`}>
+            <div className="bg-blue-300 p-6 rounded shadow-lg w-full max-w-md">
                 <button
                     type="button"
                     onClick={() => setOpenMobileMenu(false)}
@@ -116,6 +135,25 @@ export default function FilterSidebar(
                     </option>
                 ))}
             </Select>
+
+            {/* <hr className='my-4'/>
+
+            <div className='flex w-full justify-center items-center'>
+                <button
+                    // onClick={() => setViewMode('favorites')} // ou navegue com router, dependendo da lógica
+                    className="flex items-center gap-2 text-gray-700 hover:text-blue-600"
+                >
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-red-500"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    >
+                    <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 18.657l-6.828-6.829a4 4 0 010-5.656z" />
+                    </svg>
+                    <span>Favoritos</span>
+                </button>
+            </div> */}
             </div>
         </div>
     </>
