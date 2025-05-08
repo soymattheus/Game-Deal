@@ -62,7 +62,7 @@ export function DashboardProvider({ children }: DashboardProviderType) {
     const [showModal, setShowModal] = useState(false);
     const [showFavoritesModal, setShowFavoritesModal] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
     const [openMobileMenu, setOpenMobileMenu] = useState(false);
     const [favorites, setFavorites] = useState<Deal[]>([]);
   
@@ -85,6 +85,24 @@ export function DashboardProvider({ children }: DashboardProviderType) {
     
     console.log(dealsWithStoreName)
     setDealsWithStoreName(dealsWithStoreName)
+    },[deals, stores])
+
+    useEffect(() => {
+      handleFetchDeals();
+    }, [search, storeID, priceRange, sortBy, currentPage]);
+  
+    useEffect(() => {
+      const storeMap = new Map<string, string>()
+      stores.forEach(store => {
+        storeMap.set(store.storeID, store.storeName)
+      })
+      
+      const dealsWithStoreName = deals.map(deal => ({
+        ...deal,
+        storeName: storeMap.get(deal.storeID) || 'Unknown Store'
+      }))
+  
+      setDealsWithStoreName(dealsWithStoreName)
     },[deals, stores])
     
     const handleFetchStores = async () => {

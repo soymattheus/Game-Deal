@@ -12,11 +12,9 @@ import { Button } from '../../components/Button';
 import { useDashboard } from '../Providers/dashboard';
 
 export default function GameDealsDashboard() {
-  const { 
-    deals, 
+  const {
     stores,
     dealsWithStoreName,
-    setDealsWithStoreName,
     search,
     setSearch,
     storeID,
@@ -41,7 +39,6 @@ export default function GameDealsDashboard() {
     setIsPagingUpdate,
     Columns,
     handleFetchStores,
-    handleFetchDeals,
     handleSelectDeal,
     handleToggleFavorite,
     handleOpenFavoritesModal,
@@ -51,26 +48,7 @@ export default function GameDealsDashboard() {
 
   useEffect(() => {
     handleFetchStores()
-  }, [])
-
-  useEffect(() => {
-    handleFetchDeals();
-  }, [search, storeID, priceRange, sortBy, currentPage]);
-
-  useEffect(() => {
-    const storeMap = new Map<string, string>()
-    stores.forEach(store => {
-      storeMap.set(store.storeID, store.storeName)
-    })
-    
-    const dealsWithStoreName = deals.map(deal => ({
-      ...deal,
-      storeName: storeMap.get(deal.storeID) || 'Unknown Store'
-    }))
-
-    setDealsWithStoreName(dealsWithStoreName)
-  },[deals, stores])
-  
+  }, [])  
 
   return (
     <div className="flex flex-col w-full min-h-screen mx-auto">
@@ -101,90 +79,90 @@ export default function GameDealsDashboard() {
             <div className="flex flex-col w-full md:w-4/5 md:px-4">
               {/* Header body */}
               <div className='flex flex-col md:flex-row w-full items-center justify-center md:justify-between text-center font-semibold text-blue-600 pt-4 px-4'>
+              <div className="w-2/3 flex justify-start">
                 <p>
                   Welcome! We're glad to have you here. Explore and enjoy the best deals just for you!
                 </p>
-
-                <div className="w-full flex justify-end">
-                  <div className="flex flex-row items-center space-x-2">
-                    <p className="text-gray-500 text-sm">View as:</p>
-
-                    {/* List View */}
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`flex items-center transition-opacity ${
-                        viewMode === 'list' ? 'opacity-100' : 'opacity-40'
-                      }`}
-                      title="List"
-                    >
-                      <Table size={20} color="blue" />
-                    </button>
-
-                    {/* Grid View */}
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`flex items-center transition-opacity ${
-                        viewMode === 'grid' ? 'opacity-100' : 'opacity-40'
-                      }`}
-                      title="Grid"
-                    >
-                      <LayoutGrid size={20} color="blue" />
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              { 
-                viewMode === 'grid' ? (
-                  <GridView 
-                    Columns={Columns} 
-                    deals={dealsWithStoreName} 
-                    loading={loading} 
-                    currentPage={currentPage} 
-                    setCurrentPage={setCurrentPage}
-                    handleSelectDeal={handleSelectDeal}
-                    setIsPagingUpdate={setIsPagingUpdate}
-                  />
-                ) : (
-                  <DataTable 
-                    Columns={Columns} 
-                    deals={dealsWithStoreName} 
-                    loading={loading} 
-                    currentPage={currentPage} 
-                    setCurrentPage={setCurrentPage}
-                    setIsPagingUpdate={setIsPagingUpdate}
-                  >
-                    {
-                      dealsWithStoreName.map((deal) => (
-                        <tr
-                          key={deal.dealID}
-                          onClick={() => handleSelectDeal(deal)}
-                          className="hover:bg-blue-100 cursor-pointer"
-                        >
-                          <td className="p-2 border flex items-center gap-2 w-auto whitespace-nowrap overflow-x-hidden">
-                            <img
-                              src={deal.thumb}
-                              alt={deal.title}
-                              className="w-14 h-14 rounded"
-                            />
-                            {deal.title}
-                          </td>
-                          <td className="p-2 border text-green-600">${deal.salePrice}</td>
-                          <td className="p-2 border line-through text-gray-500">
-                            ${deal.normalPrice}
-                          </td>
-                          <td className="p-2 border text-red-600">
-                            {parseInt(deal.savings)}%
-                          </td>
-                          <td className="p-2 border">{deal.storeName}</td>
-                          <td className="p-2 border text-blue-600">{deal.dealRating}</td>
-                        </tr>
-                      ))
-                    }
-                  </DataTable>
-                )
-              }
+              <div className="flex flex-row w-1/3 items-center justify-end space-x-2">
+                <p className="text-gray-500 text-sm">View as:</p>
+
+                {/* List View */}
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center transition-opacity ${
+                    viewMode === 'list' ? 'opacity-100' : 'opacity-40'
+                  }`}
+                  title="List"
+                >
+                  <Table size={20} color="blue" />
+                </button>
+
+                {/* Grid View */}
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center transition-opacity ${
+                    viewMode === 'grid' ? 'opacity-100' : 'opacity-40'
+                  }`}
+                  title="Grid"
+                >
+                  <LayoutGrid size={20} color="blue" />
+                </button>
+              </div>
             </div>
+
+            { 
+              viewMode === 'grid' ? (
+                <GridView 
+                  Columns={Columns} 
+                  deals={dealsWithStoreName} 
+                  loading={loading} 
+                  currentPage={currentPage} 
+                  setCurrentPage={setCurrentPage}
+                  handleSelectDeal={handleSelectDeal}
+                  setIsPagingUpdate={setIsPagingUpdate}
+                />
+              ) : (
+                <DataTable 
+                  Columns={Columns} 
+                  deals={dealsWithStoreName} 
+                  loading={loading} 
+                  currentPage={currentPage} 
+                  setCurrentPage={setCurrentPage}
+                  setIsPagingUpdate={setIsPagingUpdate}
+                >
+                  {
+                    dealsWithStoreName.map((deal) => (
+                      <tr
+                        key={deal.dealID}
+                        onClick={() => handleSelectDeal(deal)}
+                        className="hover:bg-blue-100 cursor-pointer"
+                      >
+                        <td className="p-2 border flex items-center gap-2 w-auto whitespace-nowrap overflow-x-hidden">
+                          <img
+                            src={deal.thumb}
+                            alt={deal.title}
+                            className="w-14 h-14 rounded"
+                          />
+                          {deal.title}
+                        </td>
+                        <td className="p-2 border text-green-600">${deal.salePrice}</td>
+                        <td className="p-2 border line-through text-gray-500">
+                          ${deal.normalPrice}
+                        </td>
+                        <td className="p-2 border text-red-600">
+                          {parseInt(deal.savings)}%
+                        </td>
+                        <td className="p-2 border">{deal.storeName}</td>
+                        <td className="p-2 border text-blue-600">{deal.dealRating}</td>
+                      </tr>
+                    ))
+                  }
+                </DataTable>
+              )
+            }
+          </div>
         </div>
 
         {/* Modal favorites */}
@@ -202,7 +180,7 @@ export default function GameDealsDashboard() {
                     {favorites.map((favorite, index) => (
                       <li key={index}>
                         <span 
-                          className='text-wrap break-words' 
+                          className='text-wrap break-words cursor-pointer' 
                           onClick={() => handleopenDetailsModal(favorite)}
                         >
                           {favorite?.title}
