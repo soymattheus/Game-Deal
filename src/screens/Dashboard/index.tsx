@@ -9,171 +9,46 @@ import FilterSidebar from '../../components/FilterSidebar';
 import GridView from './gridView';
 import Store from '../../types/Store';
 import { Button } from '../../components/Button';
+import { useDashboard } from '../Providers/dashboard';
 
 export default function GameDealsDashboard() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [stores, setStores] = useState<Store[]>([])
-  const [dealsWithStoreName, setDealsWithStoreName] = useState<Deal[]>([])
-  const [search, setSearch] = useState('');
-  const [storeID, setStoreID] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 60]);
-  const [sortBy, setSortBy] = useState('Price');
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [isSelectedDealInLocalStorage, setIsSelectedDealInLocalStorage] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
-  const [openMobileMenu, setOpenMobileMenu] = useState(false);
-  const [favorites, setFavorites] = useState<Deal[]>([]);
-
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [isPagingUpdate, setIsPagingUpdate] = useState(false);
-
-  const Columns = ['Game', 'New Price', 'Previous price', 'Saving', 'Store', 'Rating'];
-  const pageSize = 6;
-
-  useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const res = await axios.get('https://www.cheapshark.com/api/1.0/stores')
-        setStores(res.data)
-      } catch (error) {
-        console.error('Erro ao buscar lojas:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchStores()
-  }, [])
+  const {
+    stores,
+    dealsWithStoreName,
+    search,
+    setSearch,
+    storeID,
+    setStoreID,
+    priceRange,
+    setPriceRange,
+    sortBy,
+    setSortBy,
+    selectedDeal,
+    isSelectedDealInLocalStorage,
+    showModal,
+    showFavoritesModal,
+    setShowFavoritesModal,
+    loading,
+    viewMode,
+    setViewMode,
+    openMobileMenu,
+    setOpenMobileMenu,
+    favorites,
+    currentPage,
+    setCurrentPage,
+    setIsPagingUpdate,
+    Columns,
+    handleFetchStores,
+    handleSelectDeal,
+    handleToggleFavorite,
+    handleOpenFavoritesModal,
+    handleopenDetailsModal,
+    handleCloeDetailsModal
+  } = useDashboard();
 
   useEffect(() => {
-    const fetchDeals = async () => {
-      setLoading(true);
-      !isPagingUpdate && setCurrentPage(0);
-
-      const params: any = {
-        pageSize,
-        pageNumber: currentPage,
-      };
-
-      if (search) params.title = search;
-      if (storeID) params.storeID = storeID;
-      if (priceRange[0] > 0) params.lowerPrice = priceRange[0];
-      if (priceRange[1] > 0) params.upperPrice = priceRange[1];
-      if (sortBy) params.sortBy = sortBy.replace(/ /g, '').toLowerCase();
-
-      try {
-        const res = await axios.get('https://www.cheapshark.com/api/1.0/deals', { params });
-        setDeals(res.data);
-        
-      } catch (error) {
-        console.error('Erro ao buscar deals:', error);
-      } finally {
-        setIsPagingUpdate(false);
-        setLoading(false);
-      }
-    };
-
-    fetchDeals();
-  }, [search, storeID, priceRange, sortBy, currentPage]);
-
-  useEffect(() => {
-    const storeMap = new Map<string, string>()
-    stores.forEach(store => {
-      storeMap.set(store.storeID, store.storeName)
-    })
-    
-    const dealsWithStoreName = deals.map(deal => ({
-      ...deal,
-      storeName: storeMap.get(deal.storeID) || 'Unknown Store'
-    }))
-    
-    console.log(dealsWithStoreName)
-    setDealsWithStoreName(dealsWithStoreName)
-  },[deals, stores])
-  
-  const handleSelectDeal = (deal: Deal) => {
-    setSelectedDeal(deal);
-    isItemInLocalStorage(deal.dealID);
-    setShowModal(true);
-  };
-  
-  const toggleFavorite = (item: Deal) => {
-    const key = 'favorites';
-    let favorites: Deal[] = [];
-    
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        
-        if (Array.isArray(parsed)) {
-          favorites = parsed;
-        }
-      }
-  
-      const exists = favorites.some(fav => fav.dealID === item.dealID);
-      const updatedFavorites = exists
-        ? favorites.filter(fav => fav.dealID !== item.dealID)
-        : [...favorites, item];
-  
-      localStorage.setItem(key, JSON.stringify(updatedFavorites));
-      isItemInLocalStorage(item.dealID, key);
-      console.log(isSelectedDealInLocalStorage)
-    } catch (error) {
-      console.error('LocalStorage access error:', error);
-    }
-  }
-
-  const isItemInLocalStorage = (id: string, key: string = 'favorites'): void => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (!stored) setIsSelectedDealInLocalStorage(false);
-  
-      const parsed = JSON.parse(stored || '[]');
-      if (!Array.isArray(parsed)) setIsSelectedDealInLocalStorage(false);
-  
-      setIsSelectedDealInLocalStorage(parsed.some((item: Deal) => item.dealID === id))
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }
-
-  const getFavorites = (): void => {
-    const stored = localStorage.getItem("favorites");
-
-    if (!stored) return;
-
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        setFavorites(parsed);
-      }
-    } catch (e) {
-      console.error("Erro ao ler favoritos:", e);
-    }
-  }
-
-  const handleOpenFavoritesModal = () => {
-    getFavorites();
-    setShowFavoritesModal(true);
-  }
-
-  const handleopenDetailsModal = (deal: Deal): void => {
-    setSelectedDeal(deal);
-    isItemInLocalStorage(deal?.dealID || '');
-    setShowModal(true);
-  }
-
-  const handleCloeDetailsModal = () => {
-    getFavorites();
-    setSelectedDeal(null);
-    setShowModal(false);
-    setIsSelectedDealInLocalStorage(false);
-  }
-  
+    handleFetchStores()
+  }, [])  
 
   return (
     <div className="flex flex-col w-full min-h-screen mx-auto">
@@ -204,90 +79,90 @@ export default function GameDealsDashboard() {
             <div className="flex flex-col w-full md:w-4/5 md:px-4">
               {/* Header body */}
               <div className='flex flex-col md:flex-row w-full items-center justify-center md:justify-between text-center font-semibold text-blue-600 pt-4 px-4'>
+              <div className="w-2/3 flex justify-start">
                 <p>
                   Welcome! We're glad to have you here. Explore and enjoy the best deals just for you!
                 </p>
-
-                <div className="w-full flex justify-end">
-                  <div className="flex flex-row items-center space-x-2">
-                    <p className="text-gray-500 text-sm">View as:</p>
-
-                    {/* List View */}
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`flex items-center transition-opacity ${
-                        viewMode === 'list' ? 'opacity-100' : 'opacity-40'
-                      }`}
-                      title="List"
-                    >
-                      <Table size={20} color="blue" />
-                    </button>
-
-                    {/* Grid View */}
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`flex items-center transition-opacity ${
-                        viewMode === 'grid' ? 'opacity-100' : 'opacity-40'
-                      }`}
-                      title="Grid"
-                    >
-                      <LayoutGrid size={20} color="blue" />
-                    </button>
-                  </div>
-                </div>
               </div>
 
-              { 
-                viewMode === 'grid' ? (
-                  <GridView 
-                    Columns={Columns} 
-                    deals={dealsWithStoreName} 
-                    loading={loading} 
-                    currentPage={currentPage} 
-                    setCurrentPage={setCurrentPage}
-                    handleSelectDeal={handleSelectDeal}
-                    setIsPagingUpdate={setIsPagingUpdate}
-                  />
-                ) : (
-                  <DataTable 
-                    Columns={Columns} 
-                    deals={dealsWithStoreName} 
-                    loading={loading} 
-                    currentPage={currentPage} 
-                    setCurrentPage={setCurrentPage}
-                    setIsPagingUpdate={setIsPagingUpdate}
-                  >
-                    {
-                      dealsWithStoreName.map((deal) => (
-                        <tr
-                          key={deal.dealID}
-                          onClick={() => handleSelectDeal(deal)}
-                          className="hover:bg-blue-100 cursor-pointer"
-                        >
-                          <td className="p-2 border flex items-center gap-2 w-auto whitespace-nowrap overflow-x-hidden">
-                            <img
-                              src={deal.thumb}
-                              alt={deal.title}
-                              className="w-14 h-14 rounded"
-                            />
-                            {deal.title}
-                          </td>
-                          <td className="p-2 border text-green-600">${deal.salePrice}</td>
-                          <td className="p-2 border line-through text-gray-500">
-                            ${deal.normalPrice}
-                          </td>
-                          <td className="p-2 border text-red-600">
-                            {parseInt(deal.savings)}%
-                          </td>
-                          <td className="p-2 border">{deal.storeName}</td>
-                          <td className="p-2 border text-blue-600">{deal.dealRating}</td>
-                        </tr>
-                      ))
-                    }
-                  </DataTable>
-                )
-              }
+              <div className="flex flex-row w-1/3 items-center justify-end space-x-2">
+                <p className="text-gray-500 text-sm">View as:</p>
+
+                {/* List View */}
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center transition-opacity ${
+                    viewMode === 'list' ? 'opacity-100' : 'opacity-40'
+                  }`}
+                  title="List"
+                >
+                  <Table size={20} color="blue" />
+                </button>
+
+                {/* Grid View */}
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`flex items-center transition-opacity ${
+                    viewMode === 'grid' ? 'opacity-100' : 'opacity-40'
+                  }`}
+                  title="Grid"
+                >
+                  <LayoutGrid size={20} color="blue" />
+                </button>
+              </div>
             </div>
+
+            { 
+              viewMode === 'grid' ? (
+                <GridView 
+                  Columns={Columns} 
+                  deals={dealsWithStoreName} 
+                  loading={loading} 
+                  currentPage={currentPage} 
+                  setCurrentPage={setCurrentPage}
+                  handleSelectDeal={handleSelectDeal}
+                  setIsPagingUpdate={setIsPagingUpdate}
+                />
+              ) : (
+                <DataTable 
+                  Columns={Columns} 
+                  deals={dealsWithStoreName} 
+                  loading={loading} 
+                  currentPage={currentPage} 
+                  setCurrentPage={setCurrentPage}
+                  setIsPagingUpdate={setIsPagingUpdate}
+                >
+                  {
+                    dealsWithStoreName.map((deal) => (
+                      <tr
+                        key={deal.dealID}
+                        onClick={() => handleSelectDeal(deal)}
+                        className="hover:bg-blue-100 cursor-pointer"
+                      >
+                        <td className="p-2 border flex items-center gap-2 w-auto whitespace-nowrap overflow-x-hidden">
+                          <img
+                            src={deal.thumb}
+                            alt={deal.title}
+                            className="w-14 h-14 rounded"
+                          />
+                          {deal.title}
+                        </td>
+                        <td className="p-2 border text-green-600">${deal.salePrice}</td>
+                        <td className="p-2 border line-through text-gray-500">
+                          ${deal.normalPrice}
+                        </td>
+                        <td className="p-2 border text-red-600">
+                          {parseInt(deal.savings)}%
+                        </td>
+                        <td className="p-2 border">{deal.storeName}</td>
+                        <td className="p-2 border text-blue-600">{deal.dealRating}</td>
+                      </tr>
+                    ))
+                  }
+                </DataTable>
+              )
+            }
+          </div>
         </div>
 
         {/* Modal favorites */}
@@ -305,7 +180,7 @@ export default function GameDealsDashboard() {
                     {favorites.map((favorite, index) => (
                       <li key={index}>
                         <span 
-                          className='text-wrap break-words' 
+                          className='text-wrap break-words cursor-pointer' 
                           onClick={() => handleopenDetailsModal(favorite)}
                         >
                           {favorite?.title}
@@ -328,11 +203,11 @@ export default function GameDealsDashboard() {
                 {
                   isSelectedDealInLocalStorage ? (
                     <button title='Remove from favorites' className='flex items-center gap-2'>
-                      <HeartMinus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                      <HeartMinus color="#f90101" onClick={() => selectedDeal && handleToggleFavorite(selectedDeal)}/>
                     </button>
                   ) : (
                     <button title='Add to favorites' className='flex items-center gap-2'>
-                      <HeartPlus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                      <HeartPlus color="#f90101" onClick={() => selectedDeal && handleToggleFavorite(selectedDeal)}/>
                     </button>
                   )
                 }
