@@ -9,74 +9,52 @@ import FilterSidebar from '../../components/FilterSidebar';
 import GridView from './gridView';
 import Store from '../../types/Store';
 import { Button } from '../../components/Button';
+import { useDashboard } from '../Providers/dashboard';
 
 export default function GameDealsDashboard() {
-  const [deals, setDeals] = useState<Deal[]>([]);
-  const [stores, setStores] = useState<Store[]>([])
-  const [dealsWithStoreName, setDealsWithStoreName] = useState<Deal[]>([])
-  const [search, setSearch] = useState('');
-  const [storeID, setStoreID] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 60]);
-  const [sortBy, setSortBy] = useState('Price');
-  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
-  const [isSelectedDealInLocalStorage, setIsSelectedDealInLocalStorage] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showFavoritesModal, setShowFavoritesModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
-  const [openMobileMenu, setOpenMobileMenu] = useState(false);
-  const [favorites, setFavorites] = useState<Deal[]>([]);
-
-  const [currentPage, setCurrentPage] = useState<number>(0);
-  const [isPagingUpdate, setIsPagingUpdate] = useState(false);
-
-  const Columns = ['Game', 'New Price', 'Previous price', 'Saving', 'Store', 'Rating'];
-  const pageSize = 6;
+  const { 
+    deals, 
+    stores,
+    dealsWithStoreName,
+    setDealsWithStoreName,
+    search,
+    setSearch,
+    storeID,
+    setStoreID,
+    priceRange,
+    setPriceRange,
+    sortBy,
+    setSortBy,
+    selectedDeal,
+    isSelectedDealInLocalStorage,
+    showModal,
+    showFavoritesModal,
+    setShowFavoritesModal,
+    loading,
+    viewMode,
+    setViewMode,
+    openMobileMenu,
+    setOpenMobileMenu,
+    favorites,
+    currentPage,
+    setCurrentPage,
+    setIsPagingUpdate,
+    Columns,
+    handleFetchStores,
+    handleFetchDeals,
+    handleSelectDeal,
+    handleToggleFavorite,
+    handleOpenFavoritesModal,
+    handleopenDetailsModal,
+    handleCloeDetailsModal
+  } = useDashboard();
 
   useEffect(() => {
-    const fetchStores = async () => {
-      try {
-        const res = await axios.get('https://www.cheapshark.com/api/1.0/stores')
-        setStores(res.data)
-      } catch (error) {
-        console.error('Erro ao buscar lojas:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchStores()
+    handleFetchStores()
   }, [])
 
   useEffect(() => {
-    const fetchDeals = async () => {
-      setLoading(true);
-      !isPagingUpdate && setCurrentPage(0);
-
-      const params: any = {
-        pageSize,
-        pageNumber: currentPage,
-      };
-
-      if (search) params.title = search;
-      if (storeID) params.storeID = storeID;
-      if (priceRange[0] > 0) params.lowerPrice = priceRange[0];
-      if (priceRange[1] > 0) params.upperPrice = priceRange[1];
-      if (sortBy) params.sortBy = sortBy.replace(/ /g, '').toLowerCase();
-
-      try {
-        const res = await axios.get('https://www.cheapshark.com/api/1.0/deals', { params });
-        setDeals(res.data);
-        
-      } catch (error) {
-        console.error('Erro ao buscar deals:', error);
-      } finally {
-        setIsPagingUpdate(false);
-        setLoading(false);
-      }
-    };
-
-    fetchDeals();
+    handleFetchDeals();
   }, [search, storeID, priceRange, sortBy, currentPage]);
 
   useEffect(() => {
@@ -89,90 +67,9 @@ export default function GameDealsDashboard() {
       ...deal,
       storeName: storeMap.get(deal.storeID) || 'Unknown Store'
     }))
-    
-    console.log(dealsWithStoreName)
+
     setDealsWithStoreName(dealsWithStoreName)
   },[deals, stores])
-  
-  const handleSelectDeal = (deal: Deal) => {
-    setSelectedDeal(deal);
-    isItemInLocalStorage(deal.dealID);
-    setShowModal(true);
-  };
-  
-  const toggleFavorite = (item: Deal) => {
-    const key = 'favorites';
-    let favorites: Deal[] = [];
-    
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        
-        if (Array.isArray(parsed)) {
-          favorites = parsed;
-        }
-      }
-  
-      const exists = favorites.some(fav => fav.dealID === item.dealID);
-      const updatedFavorites = exists
-        ? favorites.filter(fav => fav.dealID !== item.dealID)
-        : [...favorites, item];
-  
-      localStorage.setItem(key, JSON.stringify(updatedFavorites));
-      isItemInLocalStorage(item.dealID, key);
-      console.log(isSelectedDealInLocalStorage)
-    } catch (error) {
-      console.error('LocalStorage access error:', error);
-    }
-  }
-
-  const isItemInLocalStorage = (id: string, key: string = 'favorites'): void => {
-    try {
-      const stored = localStorage.getItem(key);
-      if (!stored) setIsSelectedDealInLocalStorage(false);
-  
-      const parsed = JSON.parse(stored || '[]');
-      if (!Array.isArray(parsed)) setIsSelectedDealInLocalStorage(false);
-  
-      setIsSelectedDealInLocalStorage(parsed.some((item: Deal) => item.dealID === id))
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  }
-
-  const getFavorites = (): void => {
-    const stored = localStorage.getItem("favorites");
-
-    if (!stored) return;
-
-    try {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed)) {
-        setFavorites(parsed);
-      }
-    } catch (e) {
-      console.error("Erro ao ler favoritos:", e);
-    }
-  }
-
-  const handleOpenFavoritesModal = () => {
-    getFavorites();
-    setShowFavoritesModal(true);
-  }
-
-  const handleopenDetailsModal = (deal: Deal): void => {
-    setSelectedDeal(deal);
-    isItemInLocalStorage(deal?.dealID || '');
-    setShowModal(true);
-  }
-
-  const handleCloeDetailsModal = () => {
-    getFavorites();
-    setSelectedDeal(null);
-    setShowModal(false);
-    setIsSelectedDealInLocalStorage(false);
-  }
   
 
   return (
@@ -328,11 +225,11 @@ export default function GameDealsDashboard() {
                 {
                   isSelectedDealInLocalStorage ? (
                     <button title='Remove from favorites' className='flex items-center gap-2'>
-                      <HeartMinus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                      <HeartMinus color="#f90101" onClick={() => selectedDeal && handleToggleFavorite(selectedDeal)}/>
                     </button>
                   ) : (
                     <button title='Add to favorites' className='flex items-center gap-2'>
-                      <HeartPlus color="#f90101" onClick={() => selectedDeal && toggleFavorite(selectedDeal)}/>
+                      <HeartPlus color="#f90101" onClick={() => selectedDeal && handleToggleFavorite(selectedDeal)}/>
                     </button>
                   )
                 }
